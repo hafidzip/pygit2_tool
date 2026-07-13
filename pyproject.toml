@@ -1,0 +1,10 @@
+[project]
+name = "pygit2_tool"
+version = "0.1.0"
+description = "Interact with Git repositories using pygit2 (libgit2 bindings)."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pygit2>=1.15.0",
+    "openchadpy>=0.1.23",
+]
