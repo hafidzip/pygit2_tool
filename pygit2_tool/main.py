@@ -38,6 +38,7 @@ import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import pygit2
+from pygit2.enums import SortMode
 from openchadpy.tool_base import ToolBase
 
 logger = logging.getLogger(__name__)
@@ -213,7 +214,7 @@ class Tool(ToolBase):
         except Exception as e:
             return {"error": f"Could not resolve ref '{ref}': {e}"}
         commits = []
-        for commit in repo.walk(head_commit.id, pygit2.GIT_SORT_TIME):
+        for commit in repo.walk(head_commit.id, SortMode.TIME):
             commits.append(_commit_to_dict(commit))
             if len(commits) >= max_commits:
                 break
@@ -231,7 +232,7 @@ class Tool(ToolBase):
         if ref_to:
             try:
                 commit_to = repo.revparse_single(ref_to).peel(pygit2.Commit)
-                diff = repo.diff(commit_from.tree, commit_to.tree)
+                diff = commit_from.tree.diff_to_tree(commit_to.tree)
             except Exception as e:
                 return {"error": f"Could not resolve ref_to '{ref_to}': {e}"}
         else:
@@ -240,15 +241,25 @@ class Tool(ToolBase):
 
         diff.find_similar()
         patches = []
-        for patch in diff:
-            patches.append({
-                "old_file": patch.delta.old_file.path,
-                "new_file": patch.delta.new_file.path,
-                "status": patch.delta.status_char(),
-                "additions": patch.line_stats[1],
-                "deletions": patch.line_stats[2],
-                "patch": patch.text,
-            })
+        for patch, delta in zip(diff, diff.deltas):
+            if patch is not None:
+                patches.append({
+                    "old_file": patch.delta.old_file.path,
+                    "new_file": patch.delta.new_file.path,
+                    "status": patch.delta.status_char(),
+                    "additions": patch.line_stats[1],
+                    "deletions": patch.line_stats[2],
+                    "patch": patch.text,
+                })
+            else:
+                patches.append({
+                    "old_file": delta.old_file.path,
+                    "new_file": delta.new_file.path,
+                    "status": delta.status_char(),
+                    "additions": 0,
+                    "deletions": 0,
+                    "patch": None,
+                })
         return {
             "files_changed": len(patches),
             "patches": patches,

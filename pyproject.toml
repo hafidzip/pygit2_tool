@@ -1,6 +1,6 @@
 [project]
 name = "pygit2_tool"
-version = "0.1.0"
+version = "0.1.1"
 description = "Interact with Git repositories using pygit2 (libgit2 bindings)."
 readme = "README.md"
 requires-python = ">=3.13"
